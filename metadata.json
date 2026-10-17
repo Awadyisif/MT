@@ -1,0 +1,6 @@
+{
+  "name": "3D Predictive World Simulator v32.0 - Proof Level",
+  "description": "مصفوفة الإثبات الطوبولوجي للأنسجة: محاكاة تداخل أنسجة الوعي مع مصفوفة المادة المظلمة الهندسية تحت الضغط الطيفي مع شيدر مخصص وتسجيل فيديو وقياسات تجريبية حية.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

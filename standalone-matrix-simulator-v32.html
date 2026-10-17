@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Predictive World Simulator v32.0 - Proof Level</title>
+    <meta name="description" content="مصفوفة الإثبات الطوبولوجي للأنسجة: تداخل أنسجة الوعي مع مصفوفة المادة المظلمة الهندسية تحت الضغط الطيفي">
+    
+    <!-- Three.js & OrbitControls via high-speed CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- Google Fonts: Cairo & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-dark: #040406;
+            --panel-bg: rgba(9, 9, 18, 0.92);
+            --accent-cyan: #00f2fe;
+            --accent-purple: #9d4edd;
+            --accent-green: #4df0a6;
+            --neon-rose: #ff007f;
+            --text-main: #e2e8f0;
+            --text-muted: #64748b;
+            --border-glow: rgba(0, 242, 254, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-dark);
+            font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace, ui-monospace;
+        }
+
+        /* Top Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 16px;
+            background: rgba(9, 9, 18, 0.95);
+            border-bottom: 1px solid #16162a;
+            flex-shrink: 0;
+            z-index: 100;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .header-title-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-pill {
+            width: 4px;
+            height: 28px;
+            background: linear-gradient(to bottom, var(--accent-cyan), var(--accent-purple), var(--neon-rose));
+            border-radius: 2px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 800;
+            background: linear-gradient(45deg, var(--accent-cyan), #c084fc, var(--neon-rose));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .version-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(0, 242, 254, 0.1);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            color: var(--accent-cyan);
+            font-weight: bold;
+            display: inline-block;
+            margin-right: 6px;
+        }
+
+        .header-subtitle {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 1px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .node-counter {
+            background: #05050d;
+            border: 1px solid #1e1e38;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            color: #94a3b8;
+        }
+        .node-counter span {
+            color: var(--accent-cyan);
+            font-weight: 800;
+            font-size: 13px;
+            margin-right: 4px;
+        }
+
+        /* Buttons */
+        button {
+            background: #0d0d1a;
+            border: 1px solid #1f293d;
+            color: var(--text-main);
+            padding: 5px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        button:hover {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 242, 254, 0.08);
+        }
+        button.active {
+            border-color: var(--accent-purple);
+            background: rgba(157, 78, 221, 0.2);
+            color: var(--accent-cyan);
+            box-shadow: 0 0 8px rgba(157, 78, 221, 0.3);
+        }
+
+        .record-btn {
+            background: linear-gradient(45deg, #6d28d9, var(--neon-rose));
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-weight: bold;
+            color: #fff;
+        }
+        .record-btn.recording {
+            background: linear-gradient(45deg, #dc2626, #991b1b);
+            animation: pulse-border 1.5s infinite;
+        }
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+
+        /* Main Workspace Layout */
+        .workspace-wrapper {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .viewport-container {
+            flex: 1;
+            position: relative;
+            background: #000;
+            overflow: hidden;
+        }
+
+        #webgl-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            outline: none;
+            cursor: grab;
+        }
+        #webgl-canvas:active {
+            cursor: grabbing;
+        }
+
+        /* Overlays & HUD */
+        .overlay-panel {
+            position: absolute;
+            background: rgba(4, 4, 8, 0.88);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 11px;
+            z-index: 20;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        #telemetry-3d {
+            top: 12px;
+            left: 12px;
+            border-left: 3px solid var(--accent-purple);
+            min-width: 230px;
+            direction: ltr;
+            text-align: left;
+        }
+
+        #proof-analytics {
+            top: 12px;
+            right: 12px;
+            border-right: 3px solid var(--neon-rose);
+            min-width: 250px;
+        }
+
+        #matrix-metrics {
+            bottom: 12px;
+            left: 12px;
+            border-left: 3px solid var(--accent-green);
+            direction: ltr;
+            text-align: left;
+        }
+
+        /* Sidebar Dock */
+        .control-sidebar {
+            width: 380px;
+            background-color: var(--panel-bg);
+            border-right: 1px solid #141426;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            height: 100%;
+            position: relative;
+            z-index: 30;
+            transition: transform 0.3s ease;
+        }
+        .control-sidebar.hidden {
+            transform: translateX(100%);
+        }
+
+        .sidebar-tabs {
+            display: flex;
+            background: #05050b;
+            border-bottom: 1px solid #131325;
+            padding: 6px;
+            gap: 4px;
+            overflow-x: auto;
+            flex-shrink: 0;
+        }
+        .sidebar-tabs button {
+            padding: 4px 8px;
+            font-size: 10px;
+            white-space: nowrap;
+        }
+
+        .sidebar-scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .section-box {
+            background: rgba(11, 11, 22, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .section-hdr {
+            font-size: 11px;
+            font-weight: bold;
+            color: var(--accent-cyan);
+            border-right: 3px solid var(--accent-purple);
+            padding-right: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .slider-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-top: 4px;
+        }
+        .slider-item label {
+            font-size: 11px;
+            color: #94a3b8;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent-cyan);
+            background: #0b0f19;
+            height: 4px;
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+        .file-upload-box {
+            border: 1px dashed #334155;
+            background: #06060c;
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 11px;
+            color: #94a3b8;
+            transition: all 0.2s;
+        }
+        .file-upload-box:hover {
+            border-color: var(--accent-cyan);
+            color: #e2e8f0;
+        }
+
+        .btn-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+        .btn-grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 5px;
+        }
+
+        .preset-tex-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: right;
+            padding: 6px 8px;
+            gap: 2px;
+            background: #090913;
+            border: 1px solid #1a1a2e;
+            border-radius: 6px;
+        }
+        .preset-tex-btn .tex-title {
+            font-weight: bold;
+            color: #e2e8f0;
+            font-size: 11px;
+        }
+        .preset-tex-btn .tex-desc {
+            font-size: 9px;
+            color: #64748b;
+        }
+        .preset-tex-btn.active {
+            border-color: var(--accent-purple);
+            background: rgba(157, 78, 221, 0.15);
+        }
+
+        /* Ledger Box */
+        .ledger-box {
+            background: #020205;
+            border: 1px solid #111122;
+            border-radius: 6px;
+            height: 140px;
+            overflow-y: auto;
+            padding: 8px;
+            font-size: 11px;
+            direction: ltr;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .ledger-row {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            padding-bottom: 2px;
+            line-height: 1.3;
+            word-break: break-all;
+        }
+        .tag-commit { color: var(--accent-cyan); font-weight: bold; }
+        .tag-proof { color: var(--accent-green); font-weight: bold; }
+        .tag-order { color: #c084fc; font-weight: bold; }
+
+        /* Floating Sidebar Toggle Button */
+        .sidebar-toggle-handle {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            left: 0;
+            background: #090914;
+            border: 1px solid #252540;
+            border-left: 0;
+            color: var(--accent-cyan);
+            border-radius: 0 6px 6px 0;
+            padding: 8px 4px;
+            cursor: pointer;
+            z-index: 40;
+        }
+
+        /* Zen Mode Overlay Pill */
+        .zen-pill {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 50;
+            display: none;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: rgba(5, 5, 10, 0.5); }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 242, 254, 0.25); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 242, 254, 0.5); }
+    </style>
+</head>
+<body>
+
+    <!-- Header Bar -->
+    <header id="app-header">
+        <div class="header-title-box">
+            <div class="status-pill"></div>
+            <div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <h1 id="txt-title">مصفوفة الإثبات الطوبولوجي للأنسجة</h1>
+                    <span class="version-badge font-mono">v32.0 PROOF</span>
+                </div>
+                <div class="header-subtitle" id="txt-subtitle">
+                    تداخل أنسجة الوعي مع مصفوفة المادة المظلمة الهندسية تحت الضغط الطيفي
+                </div>
+            </div>
+        </div>
+
+        <div class="header-actions font-mono">
+            <div class="node-counter">
+                <span id="ui-chunk-counter">0</span>:CONVERGENCE NODE
+            </div>
+
+            <button class="record-btn" id="btn-record-video" onclick="toggleVideoRecording()">
+                <span id="txt-record-label">تصدير إثبات مصفوفة الحقيقة ©</span>
+            </button>
+
+            <button onclick="takeSnapshot()" title="التقاط لقطة شاشة مرجعية بدقة عالية">
+                <span>📸</span> <span id="txt-snapshot-label">لقطة إثبات</span>
+            </button>
+
+            <button id="btn-audio-toggle" onclick="toggleCosmicDrone()" title="تشغيل رنين التردد الكوني (432Hz)">
+                <span>🔊</span>
+            </button>
+
+            <button onclick="resetCameraAngle()" title="إعادة ضبط زاوية الكاميرا">
+                <span>↺</span>
+            </button>
+
+            <button onclick="toggleLanguage()" title="تبديل اللغة (Language Toggle)">
+                <span id="ui-lang-label">EN</span>
+            </button>
+
+            <button onclick="toggleZenMode()" title="وضع الشاشة السينمائية الخالصة (Zen Mode)">
+                <span>👁</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="workspace-wrapper">
+        <!-- 3D Viewport -->
+        <div class="viewport-container">
+            <canvas id="webgl-canvas"></canvas>
+
+            <!-- Top Left HUD: Telemetry Matrix -->
+            <div class="overlay-panel font-mono" id="telemetry-3d">
+                <div style="color: var(--accent-purple); font-weight: bold; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 3px;">
+                    ⚡ TELEMETRY MATRIX
+                </div>
+                <div>MATRIX STATE: <span style="color: var(--accent-cyan); font-weight: bold;">Unified Proof</span></div>
+                <div>GEOMETRY: <span id="ui-geom-type" style="color: #c084fc;">Sphere Adaptive</span></div>
+                <div>INJECTED BLOCK: <span id="ui-injected-block" style="color: var(--accent-cyan);">Neural Tapestry</span></div>
+                <div>QUANTUM FLUX: <span id="ui-quantum-flux" style="color: #facc15;">45.2 meV</span></div>
+            </div>
+
+            <!-- Top Right HUD: Proof Analytics -->
+            <div class="overlay-panel" id="proof-analytics">
+                <div style="color: var(--accent-cyan); font-weight: bold; font-size: 11px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 3px;">
+                    🛡️ <span id="txt-proof-title">مؤشرات إثبات تداخل الوعي الهندسي</span>
+                </div>
+                <div class="font-mono" style="direction: ltr; text-align: left; line-height: 1.6;">
+                    Interference (I): <span id="proof-interference" style="color: var(--accent-green); font-weight: bold;">62.40%</span><br>
+                    Pressure Resonance: <span id="proof-resonance" style="color: var(--neon-rose); font-weight: bold;">1.250</span><br>
+                    Entropy Delta (ΔS): <span id="proof-entropy" style="color: #f59e0b; font-weight: bold;">0.0152</span><br>
+                    Curvature Tensor: <span id="proof-curvature" style="color: var(--accent-cyan); font-weight: bold;">1.120</span>
+                </div>
+            </div>
+
+            <!-- Bottom Left HUD: FPS & Coherence -->
+            <div class="overlay-panel font-mono" id="matrix-metrics">
+                FPS: <span id="ui-fps" style="color: var(--accent-cyan); font-weight: bold;">60.0</span><br>
+                MATRIX COHERENCE: <span id="ui-coherence" style="color: var(--accent-green); font-weight: bold;">98.2%</span>
+            </div>
+
+            <!-- Zen Mode Exit Button -->
+            <div class="zen-pill" id="zen-exit-pill">
+                <button onclick="toggleZenMode()" style="background: rgba(9, 9, 22, 0.9); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); padding: 8px 16px; border-radius: 20px; font-weight: bold; box-shadow: 0 4px 20px rgba(0,0,0,0.8);">
+                    خروج من وضع المشاهدة (H)
+                </button>
+            </div>
+
+            <!-- Sidebar Toggle Button -->
+            <div class="sidebar-toggle-handle" onclick="toggleSidebar()" title="إظهار / إخفاء لوحة التحكم">
+                ◀
+            </div>
+        </div>
+
+        <!-- Sidebar Control Dock -->
+        <div class="control-sidebar" id="main-sidebar">
+            <!-- Tabs -->
+            <div class="sidebar-tabs font-mono">
+                <button id="tab-btn-all" class="active" onclick="switchTab('all')">الكل (All)</button>
+                <button id="tab-btn-tex" onclick="switchTab('tex')">الأنسجة (Textures)</button>
+                <button id="tab-btn-geom" onclick="switchTab('geom')">القوالب (Geom)</button>
+                <button id="tab-btn-pressure" onclick="switchTab('pressure')">الضغط (Pressure)</button>
+                <button id="tab-btn-ledger" onclick="switchTab('ledger')">السجل (Ledger)</button>
+            </div>
+
+            <div class="sidebar-scroll-area">
+                <!-- Section 1: Texture Injection -->
+                <div class="section-box" id="sec-tex">
+                    <div class="section-hdr">
+                        <span id="txt-sec-tex">حقن النسيج البصري (شاهد الوعي المنظم)</span>
+                        <span id="btn-eject-tex" style="font-size: 10px; color: #f43f5e; cursor: pointer;" onclick="clearInjectedTexture()">إلغاء الحقن</span>
+                    </div>
+
+                    <!-- Custom Uploader -->
+                    <div class="file-upload-box" onclick="document.getElementById('img-file-input').click()">
+                        <span id="txt-upload-label">📂 انقر لرفع لوحة فنية أو صورة مجهرية</span>
+                    </div>
+                    <input type="file" id="img-file-input" accept="image/*" onchange="handleUserImageUpload(event)">
+
+                    <!-- Procedural Presets -->
+                    <div style="font-size: 10px; color: #94a3b8; margin-top: 4px; font-weight: bold;" id="txt-presets-label">
+                        أو اختر نسيج وعي تركيبي جاهز:
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <div class="preset-tex-btn active" id="btn-tex-neural" onclick="applyPresetTexture('neural')">
+                            <span class="tex-title">✨ نسيج الوعي العصبي البيولوجي</span>
+                            <span class="tex-desc">شبكة خلايا سينابسية ومسارات عصبية متوهجة</span>
+                        </div>
+                        <div class="preset-tex-btn" id="btn-tex-sacred" onclick="applyPresetTexture('sacred')">
+                            <span class="tex-title">✨ مصفوفة الهندسة المقدسة</span>
+                            <span class="tex-desc">زهرة الحياة وتناغم دوائر النسبة الذهبية</span>
+                        </div>
+                        <div class="preset-tex-btn" id="btn-tex-cosmic" onclick="applyPresetTexture('cosmic')">
+                            <span class="tex-title">✨ سديم الانفرادية الكمومية</span>
+                            <span class="tex-desc">دوامات الجاذبية المظلمة وجزيئات الغبار الطيفي</span>
+                        </div>
+                        <div class="preset-tex-btn" id="btn-tex-cyber" onclick="applyPresetTexture('cyber')">
+                            <span class="tex-title">✨ شبكة البيانات السيبرانية</span>
+                            <span class="tex-desc">مصفوفة سداسية فائقة التوصيل ذات مسارات ليزرية</span>
+                        </div>
+                        <div class="preset-tex-btn" id="btn-tex-chromatic" onclick="applyPresetTexture('chromatic')">
+                            <span class="tex-title">✨ التدفق اللوني الطيفي</span>
+                            <span class="tex-desc">أمواج تداخلية قزحية تتفاعل مع معادلات الضغط</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Geometry & Scale -->
+                <div class="section-box" id="sec-geom">
+                    <div class="section-hdr">
+                        <span id="txt-sec-geom">تعديل أبعاد لوحة العرض (Canvas Adaptation)</span>
+                    </div>
+
+                    <div class="btn-grid-2">
+                        <button id="btn-g-sphere" class="active" onclick="setGeomType('sphere')">قالب كروي (متزن)</button>
+                        <button id="btn-g-box" onclick="setGeomType('box')">قالب صندوقي (تجريبي)</button>
+                        <button id="btn-g-torus" onclick="setGeomType('torus')">طارة طوبولوجية</button>
+                        <button id="btn-g-knot" onclick="setGeomType('torusKnot')">عقدة كسيرية</button>
+                        <button id="btn-g-icosa" onclick="setGeomType('icosahedron')">عشروني السطوح</button>
+                        <button id="btn-g-cyl" onclick="setGeomType('cylinder')">أسطوانة زمكانية</button>
+                    </div>
+
+                    <div class="slider-item">
+                        <label><span>التمدد الأفقي (X-Scale)</span><span id="val-scaleX" class="font-mono">1.0</span></label>
+                        <input type="range" id="rng-scaleX" min="0.4" max="2.5" step="0.1" value="1.0" oninput="updateScale('x', this.value)">
+                    </div>
+                    <div class="slider-item">
+                        <label><span>التمدد الرأسي (Y-Scale)</span><span id="val-scaleY" class="font-mono">1.0</span></label>
+                        <input type="range" id="rng-scaleY" min="0.4" max="2.5" step="0.1" value="1.0" oninput="updateScale('y', this.value)">
+                    </div>
+                    <div class="slider-item">
+                        <label><span>العمق البعدي (Z-Scale)</span><span id="val-scaleZ" class="font-mono">1.0</span></label>
+                        <input type="range" id="rng-scaleZ" min="0.4" max="2.5" step="0.1" value="1.0" oninput="updateScale('z', this.value)">
+                    </div>
+                </div>
+
+                <!-- Section 3: Topology Render & Colors -->
+                <div class="section-box" id="sec-render">
+                    <div class="section-hdr">
+                        <span id="txt-sec-render">حالة الشيدر الطوبولوجية (Topology Render)</span>
+                    </div>
+
+                    <div class="btn-grid-2">
+                        <button id="btn-m-wire" class="active" onclick="setRenderMode('wireframe')">هيكل شبكي (المادة الخام)</button>
+                        <button id="btn-m-solid" onclick="setRenderMode('solid')">تجسيد مصمت (التحام)</button>
+                        <button id="btn-m-points" onclick="setRenderMode('points')">سحابة نقاط كمومية</button>
+                        <button id="btn-m-glow" onclick="setRenderMode('glow')">توهج هولوغرافي شفاف</button>
+                    </div>
+
+                    <div style="font-size: 11px; color: #94a3b8; margin-top: 6px;">
+                        لوحة الألوان الطيفية (Spectral Theme):
+                    </div>
+                    <div class="btn-grid-2">
+                        <button id="th-neon" class="active" onclick="setColorTheme('neon-cyber')">نيون سيبراني</button>
+                        <button id="th-emerald" onclick="setColorTheme('quantum-emerald')">زمردي كمومي</button>
+                        <button id="th-void" onclick="setColorTheme('cosmic-void')">فراغ كوني</button>
+                        <button id="th-plasma" onclick="setColorTheme('solar-plasma')">بلازما شمسية</button>
+                    </div>
+                </div>
+
+                <!-- Section 4: Pressure Settings -->
+                <div class="section-box" id="sec-pressure">
+                    <div class="section-hdr">
+                        <span id="txt-sec-pressure">معاملات الضغط والتشويه الكسيري (Pressure Settings)</span>
+                    </div>
+
+                    <div class="slider-item">
+                        <label><span>شدة ضغط التشويه الكسيري</span><span id="val-deform" class="font-mono" style="color: var(--neon-rose); font-weight: bold;">1.0</span></label>
+                        <input type="range" id="rng-deform" min="0" max="5" step="0.1" value="1.0" oninput="updateDeform(this.value)">
+                    </div>
+
+                    <div class="slider-item">
+                        <label><span>التردد الاهتزازي للمصفوفة</span><span id="val-freq" class="font-mono" style="color: var(--accent-cyan); font-weight: bold;">2.0 Hz</span></label>
+                        <input type="range" id="rng-freq" min="0.5" max="8" step="0.1" value="2.0" oninput="updateFreq(this.value)">
+                    </div>
+
+                    <div class="slider-item">
+                        <label><span>سرعة التنبؤ الزمني (Flow Speed)</span><span id="val-speed" class="font-mono" style="color: #c084fc; font-weight: bold;">1.0x</span></label>
+                        <input type="range" id="rng-speed" min="0" max="3" step="0.1" value="1.0" oninput="updateSpeed(this.value)">
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+                        <span style="font-size: 11px; color: #94a3b8;">دوران المدار التلقائي:</span>
+                        <button id="btn-autorotate" class="active" onclick="toggleAutoRotate()">مفعّل</button>
+                    </div>
+                </div>
+
+                <!-- Section 5: Instant Patterns -->
+                <div class="section-box" id="sec-patterns">
+                    <div class="section-hdr">
+                        <span id="txt-sec-patterns">أوامر المعايرة والحقن الفوري (Instant Patterns)</span>
+                    </div>
+
+                    <div class="btn-grid-2">
+                        <button onclick="injectPattern('HYPER_FRACTAL')" style="border-color: rgba(244,63,94,0.4); color: #fda4af;">مصفوفة كسيرية حرجة</button>
+                        <button onclick="injectPattern('FLUID_MATRIX')" style="border-color: rgba(0,242,254,0.4); color: #67e8f9;">تدفق بيولوجي مرن</button>
+                        <button onclick="injectPattern('QUANTUM_RESONANCE')" style="border-color: rgba(168,85,247,0.4); color: #d8b4fe;">رنين كمومي فائق</button>
+                        <button onclick="injectPattern('COSMIC_EQUILIBRIUM')" style="border-color: rgba(77,240,166,0.4); color: #86efac;">توازن كوني مستقر</button>
+                    </div>
+                    <button onclick="injectPattern('RESET')" style="width: 100%; margin-top: 6px; font-weight: bold;">إعادة ضبط النواة الهندسية</button>
+                </div>
+
+                <!-- Section 6: Empirical Ledger -->
+                <div class="section-box" id="sec-ledger">
+                    <div class="section-hdr">
+                        <span id="txt-sec-ledger">سجل البرهان والأشكال (Empirical Ledger)</span>
+                        <div style="display: flex; gap: 4px;">
+                            <button onclick="exportLedger('txt')" title="تصدير كملف تقرير نصي">TXT</button>
+                            <button onclick="exportLedger('json')" title="تصدير كبيانات JSON">JSON</button>
+                            <button onclick="clearLedger()" title="مسح السجل">🗑</button>
+                        </div>
+                    </div>
+
+                    <div class="ledger-box font-mono" id="ledger-content">
+                        <div class="ledger-row">[Init] [System] تم تشغيل محرك الإثبات البنيوي v32.0 بنجاح.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Logic & Shaders -->
+    <script>
+        // Custom Vertex Shader with Spectral Normal Displacement
+        const vertexShaderSource = `
+            uniform float uTime;
+            uniform float uDeformIntensity;
+            uniform float uFrequency;
+            varying vec3 vNormal;
+            varying vec3 vPosition;
+            varying float vDisplacement;
+            varying vec2 vUv;
+
+            float calculateDisplacement(vec3 p) {
+                float waveX = sin(p.x * uFrequency + uTime) * cos(p.y * uFrequency + uTime);
+                float waveY = sin(p.y * uFrequency - uTime) * cos(p.z * uFrequency + uTime);
+                float waveZ = sin(p.z * uFrequency + uTime) * cos(p.x * uFrequency - uTime);
+                return (waveX + waveY + waveZ) * 0.15 * uDeformIntensity;
+            }
+
+            void main() {
+                vNormal = normal;
+                vPosition = position;
+                vUv = uv;
+                vDisplacement = calculateDisplacement(position);
+                vec3 newPosition = position + normal * vDisplacement;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
+                gl_PointSize = clamp(3.0 + vDisplacement * 4.0, 1.5, 9.0);
+            }
+        `;
+
+        // Custom Fragment Shader with Quantum Wave Interference & Fresnel Rim
+        const fragmentShaderSource = `
+            uniform float uTime;
+            uniform sampler2D uTexture;
+            uniform bool uHasTexture;
+            uniform float uDeformIntensity;
+            uniform vec3 uColorA;
+            uniform vec3 uColorB;
+            uniform vec3 uColorAccent;
+            uniform float uOpacity;
+            uniform bool uIsPoints;
+            varying vec3 vNormal;
+            varying vec3 vPosition;
+            varying float vDisplacement;
+            varying vec2 vUv;
+
+            void main() {
+                vec3 baseColor = mix(uColorA, uColorB, sin(vDisplacement * 8.0) * 0.5 + 0.5);
+
+                if (uHasTexture) {
+                    vec4 texColor = texture2D(uTexture, vUv);
+                    float interferenceFactor = 0.4 + (0.3 * sin(uTime + vDisplacement));
+                    baseColor = mix(texColor.rgb, baseColor, interferenceFactor);
+                }
+
+                vec3 lightDir = normalize(vec3(1.0, 1.2, 1.0));
+                float lighting = dot(normalize(vNormal), lightDir) * 0.45 + 0.55;
+
+                // Fresnel Rim Glow
+                vec3 viewDir = normalize(-vPosition);
+                float fresnel = pow(1.0 - max(dot(normalize(vNormal), viewDir), 0.0), 3.0);
+                baseColor += uColorAccent * fresnel * 0.4;
+
+                if (uIsPoints) {
+                    float r = length(gl_PointCoord - vec2(0.5));
+                    if (r > 0.5) discard;
+                    gl_FragColor = vec4(baseColor * 1.3, 1.0);
+                } else {
+                    gl_FragColor = vec4(baseColor * lighting, uOpacity);
+                }
+            }
+        `;
+
+        // Global Simulation State
+        const sim = {
+            chunk: 0,
+            deform: 1.0, targetDeform: 1.0,
+            freq: 2.0, targetFreq: 2.0,
+            speed: 1.0,
+            scaleX: 1.0, scaleY: 1.0, scaleZ: 1.0,
+            geomType: 'sphere',
+            renderMode: 'wireframe',
+            hasTexture: true,
+            textureName: 'Neural Consciousness Tapestry',
+            colorTheme: 'neon-cyber',
+            autoRotate: true,
+            audioEnabled: false,
+            lang: 'ar'
+        };
+
+        // Theme Palettes
+        const THEMES = {
+            'neon-cyber': { a: new THREE.Color(0x00f2fe), b: new THREE.Color(0x9d4edd), accent: new THREE.Color(0xff007f) },
+            'quantum-emerald': { a: new THREE.Color(0x4df0a6), b: new THREE.Color(0x0284c7), accent: new THREE.Color(0xfacc15) },
+            'cosmic-void': { a: new THREE.Color(0xa855f7), b: new THREE.Color(0xec4899), accent: new THREE.Color(0x38bdf8) },
+            'solar-plasma': { a: new THREE.Color(0xf97316), b: new THREE.Color(0xd946ef), accent: new THREE.Color(0xfde047) }
+        };
+
+        // Three.js Core Objects
+        let scene, camera, renderer, controls, mesh, shaderMaterial, starField;
+        const canvas = document.getElementById('webgl-canvas');
+        let clock = { startTime: performance.now() };
+
+        // Zero-Dependency Procedural Texture Generator
+        function generateProceduralTexture(type) {
+            const size = 1024;
+            const c = document.createElement('canvas');
+            c.width = size; c.height = size;
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = '#05050b';
+            ctx.fillRect(0, 0, size, size);
+
+            if (type === 'neural') {
+                const nodes = [];
+                const colors = ['#00f2fe', '#9d4edd', '#4df0a6', '#ff007f'];
+                for (let i = 0; i < 70; i++) {
+                    nodes.push({ x: Math.random() * size, y: Math.random() * size, r: 3 + Math.random() * 5, col: colors[i % colors.length] });
+                }
+                ctx.lineWidth = 1.2;
+                for (let i = 0; i < nodes.length; i++) {
+                    for (let j = i + 1; j < nodes.length; j++) {
+                        const dist = Math.hypot(nodes[i].x - nodes[j].x, nodes[i].y - nodes[j].y);
+                        if (dist < 180) {
+                            ctx.strokeStyle = `rgba(157, 78, 221, ${(1 - dist / 180) * 0.7})`;
+                            ctx.beginPath();
+                            ctx.moveTo(nodes[i].x, nodes[i].y);
+                            ctx.lineTo(nodes[j].x, nodes[j].y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+                for (const n of nodes) {
+                    const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 4);
+                    g.addColorStop(0, n.col); g.addColorStop(1, 'transparent');
+                    ctx.fillStyle = g;
+                    ctx.beginPath(); ctx.arc(n.x, n.y, n.r * 4, 0, Math.PI * 2); ctx.fill();
+                }
+            } else if (type === 'sacred') {
+                ctx.strokeStyle = 'rgba(0, 242, 254, 0.4)';
+                ctx.lineWidth = 1.8;
+                const center = size / 2;
+                for (let layer = 1; layer <= 3; layer++) {
+                    const count = layer * 6;
+                    for (let i = 0; i < count; i++) {
+                        const a = (i * 2 * Math.PI) / count;
+                        ctx.beginPath();
+                        ctx.arc(center + Math.cos(a) * 90 * layer, center + Math.sin(a) * 90 * layer, 90, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                }
+                for (let r = 50; r <= 450; r += 50) {
+                    ctx.strokeStyle = `rgba(255, 0, 127, 0.25)`;
+                    ctx.beginPath(); ctx.arc(center, center, r, 0, Math.PI * 2); ctx.stroke();
+                }
+            } else if (type === 'cosmic') {
+                const g = ctx.createRadialGradient(size/2, size/2, 20, size/2, size/2, size * 0.6);
+                g.addColorStop(0, '#ffffff'); g.addColorStop(0.2, '#00f2fe'); g.addColorStop(0.5, '#9d4edd'); g.addColorStop(1, '#05050b');
+                ctx.fillStyle = g; ctx.fillRect(0, 0, size, size);
+                for (let t = 0; t < 1200; t++) {
+                    const a = t * 0.05; const d = Math.pow(t / 1200, 0.8) * (size * 0.45);
+                    ctx.fillStyle = Math.random() > 0.5 ? 'rgba(0,242,254,0.8)' : 'rgba(255,255,255,0.9)';
+                    ctx.fillRect(size/2 + Math.cos(a)*d, size/2 + Math.sin(a)*d, 2, 2);
+                }
+            } else if (type === 'cyber') {
+                ctx.strokeStyle = 'rgba(0, 242, 254, 0.2)';
+                for (let x = 0; x < size; x += 40) {
+                    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, size); ctx.stroke();
+                }
+                for (let y = 0; y < size; y += 40) {
+                    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(size, y); ctx.stroke();
+                }
+                ctx.lineWidth = 2.5; ctx.strokeStyle = '#4df0a6';
+                for (let i = 0; i < 20; i++) {
+                    const sx = Math.floor(Math.random()*15)*60; const sy = Math.floor(Math.random()*15)*60;
+                    ctx.strokeRect(sx, sy, 60, 60);
+                }
+            } else {
+                const g = ctx.createLinearGradient(0, 0, size, size);
+                g.addColorStop(0, '#ff007f'); g.addColorStop(0.3, '#9d4edd'); g.addColorStop(0.7, '#00f2fe'); g.addColorStop(1, '#4df0a6');
+                ctx.fillStyle = g; ctx.fillRect(0, 0, size, size);
+            }
+
+            const tex = new THREE.CanvasTexture(c);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            return tex;
+        }
+
+        // Web Audio API Cosmic Drone Synthesizer
+        const audioEngine = {
+            ctx: null, master: null, oscRoot: null, oscFifth: null, oscSub: null, filter: null, isPlaying: false,
+            init() {
+                try {
+                    const AC = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AC();
+                    this.master = this.ctx.createGain();
+                    this.master.gain.setValueAtTime(0, this.ctx.currentTime);
+                    this.master.connect(this.ctx.destination);
+
+                    this.filter = this.ctx.createBiquadFilter();
+                    this.filter.type = 'lowpass';
+                    this.filter.frequency.setValueAtTime(500, this.ctx.currentTime);
+                    this.filter.connect(this.master);
+
+                    this.oscRoot = this.ctx.createOscillator();
+                    this.oscRoot.type = 'sine';
+                    this.oscRoot.frequency.setValueAtTime(108, this.ctx.currentTime);
+
+                    this.oscFifth = this.ctx.createOscillator();
+                    this.oscFifth.type = 'sine';
+                    this.oscFifth.frequency.setValueAtTime(162, this.ctx.currentTime);
+
+                    this.oscSub = this.ctx.createOscillator();
+                    this.oscSub.type = 'triangle';
+                    this.oscSub.frequency.setValueAtTime(54, this.ctx.currentTime);
+
+                    const sg = this.ctx.createGain(); sg.gain.value = 0.35;
+                    this.oscSub.connect(sg); sg.connect(this.filter);
+
+                    const fg = this.ctx.createGain(); fg.gain.value = 0.25;
+                    this.oscFifth.connect(fg); fg.connect(this.filter);
+
+                    this.oscRoot.connect(this.filter);
+
+                    this.oscRoot.start(); this.oscFifth.start(); this.oscSub.start();
+                    this.master.gain.linearRampToValueAtTime(0.25, this.ctx.currentTime + 1.2);
+                    this.isPlaying = true;
+                } catch(e) { console.warn('Audio Init Error:', e); }
+            },
+            update(freq, deform) {
+                if (!this.isPlaying || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const base = 108 * (1 + (freq - 2.0) * 0.08);
+                this.oscRoot.frequency.setTargetAtTime(base, now, 0.2);
+                this.oscFifth.frequency.setTargetAtTime(base * 1.5, now, 0.2);
+                this.filter.frequency.setTargetAtTime(400 + deform * 220, now, 0.15);
+            },
+            stop() {
+                if (!this.isPlaying || !this.ctx) return;
+                this.master.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.5);
+                setTimeout(() => { this.ctx.close(); this.isPlaying = false; this.ctx = null; }, 600);
+            }
+        };
+
+        // Initialize Three.js Scene
+        function initScene() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x040406);
+
+            camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
+            camera.position.set(0, 0, 4.3);
+
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, preserveDrawingBuffer: true });
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            controls = new THREE.OrbitControls(camera, canvas);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.minDistance = 1.8;
+            controls.maxDistance = 12.0;
+
+            // Ambient background stars
+            const starCount = 600;
+            const starGeom = new THREE.BufferGeometry();
+            const pos = new Float32Array(starCount * 3);
+            const cols = new Float32Array(starCount * 3);
+            for (let i = 0; i < starCount; i++) {
+                pos[i*3] = (Math.random()-0.5)*24; pos[i*3+1] = (Math.random()-0.5)*24; pos[i*3+2] = (Math.random()-0.5)*24;
+                const c = Math.random() > 0.5 ? new THREE.Color(0x00f2fe) : new THREE.Color(0x9d4edd);
+                cols[i*3] = c.r; cols[i*3+1] = c.g; cols[i*3+2] = c.b;
+            }
+            starGeom.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            starGeom.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+            starField = new THREE.Points(starGeom, new THREE.PointsMaterial({ size: 0.08, vertexColors: true, transparent: true, opacity: 0.5 }));
+            scene.add(starField);
+
+            // Shaders & Material
+            const initialTex = generateProceduralTexture('neural');
+            const th = THEMES[sim.colorTheme];
+            shaderMaterial = new THREE.ShaderMaterial({
+                vertexShader: vertexShaderSource,
+                fragmentShader: fragmentShaderSource,
+                uniforms: {
+                    uTime: { value: 0.0 },
+                    uDeformIntensity: { value: sim.deform },
+                    uFrequency: { value: sim.freq },
+                    uTexture: { value: initialTex },
+                    uHasTexture: { value: true },
+                    uColorA: { value: th.a },
+                    uColorB: { value: th.b },
+                    uColorAccent: { value: th.accent },
+                    uOpacity: { value: 1.0 },
+                    uIsPoints: { value: false }
+                },
+                wireframe: sim.renderMode === 'wireframe',
+                transparent: true,
+                side: THREE.DoubleSide
+            });
+
+            rebuildGeometry();
+            window.addEventListener('resize', handleResize);
+            handleResize();
+        }
+
+        // Rebuild Active Geometry Mesh
+        function rebuildGeometry() {
+            if (mesh) scene.remove(mesh);
+            let geom;
+            switch(sim.geomType) {
+                case 'box': geom = new THREE.BoxGeometry(1.5, 1.5, 1.5, 48, 48, 48); break;
+                case 'torus': geom = new THREE.TorusGeometry(1.1, 0.45, 40, 100); break;
+                case 'torusKnot': geom = new THREE.TorusKnotGeometry(0.9, 0.32, 128, 32, 2, 3); break;
+                case 'icosahedron': geom = new THREE.IcosahedronGeometry(1.4, 24); break;
+                case 'cylinder': geom = new THREE.CylinderGeometry(0.9, 0.9, 2.0, 64, 48, false); break;
+                case 'sphere': default: geom = new THREE.SphereGeometry(1.4, 80, 80); break;
+            }
+
+            shaderMaterial.wireframe = sim.renderMode === 'wireframe';
+            shaderMaterial.uniforms.uIsPoints.value = sim.renderMode === 'points';
+            shaderMaterial.uniforms.uOpacity.value = sim.renderMode === 'glow' ? 0.75 : 1.0;
+            shaderMaterial.blending = sim.renderMode === 'glow' ? THREE.AdditiveBlending : THREE.NormalBlending;
+
+            if (sim.renderMode === 'points') {
+                mesh = new THREE.Points(geom, shaderMaterial);
+            } else {
+                mesh = new THREE.Mesh(geom, shaderMaterial);
+            }
+            mesh.scale.set(sim.scaleX, sim.scaleY, sim.scaleZ);
+            scene.add(mesh);
+        }
+
+        function handleResize() {
+            const w = canvas.parentElement.clientWidth;
+            const h = canvas.parentElement.clientHeight;
+            if (w === 0 || h === 0) return;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h, false);
+        }
+
+        // Animation Loop & Real-Time Empirical Telemetry
+        let lastFpsCheck = performance.now();
+        let fpsFrames = 0;
+        let frameCount = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const now = performance.now();
+            const elapsed = (now - clock.startTime) / 1000;
+
+            // Damping towards targets
+            sim.deform += (sim.targetDeform - sim.deform) * 0.08;
+            sim.freq += (sim.targetFreq - sim.freq) * 0.08;
+
+            shaderMaterial.uniforms.uTime.value = elapsed * sim.speed;
+            shaderMaterial.uniforms.uDeformIntensity.value = sim.deform;
+            shaderMaterial.uniforms.uFrequency.value = sim.freq;
+            shaderMaterial.uniforms.uHasTexture.value = sim.hasTexture;
+
+            audioEngine.update(sim.freq, sim.deform);
+
+            if (mesh && sim.autoRotate) {
+                mesh.rotation.y += 0.004 * sim.speed;
+                mesh.rotation.x += 0.0015 * sim.speed;
+            }
+            if (starField) starField.rotation.y += 0.0003;
+
+            controls.update();
+            renderer.render(scene, camera);
+
+            // FPS calculation
+            fpsFrames++;
+            if (now >= lastFpsCheck + 600) {
+                const fps = ((fpsFrames * 1000) / (now - lastFpsCheck)).toFixed(1);
+                document.getElementById('ui-fps').innerText = fps;
+                fpsFrames = 0; lastFpsCheck = now;
+            }
+
+            // Empirical Metrics Formulae
+            const interf = sim.hasTexture
+                ? Math.min(100, Math.max(0, 62 + Math.sin(elapsed * 1.5) * 16 + sim.deform * 5.2))
+                : Math.min(100, Math.max(0, Math.sin(elapsed * 1.2) * 6 + 3.5));
+            const reson = (1.0 + sim.deform * sim.freq * 0.125).toFixed(3);
+            const entropy = (Math.abs(Math.cos(elapsed * 0.6)) * 0.024 + sim.deform * 0.0055).toFixed(4);
+            const curv = (1.0 + Math.sin(elapsed * 0.8) * 0.25 * sim.deform).toFixed(3);
+            const flux = (Math.abs(Math.sin(elapsed * 2.0)) * 48.0 + sim.freq * 6.5).toFixed(1);
+
+            document.getElementById('proof-interference').innerText = interf.toFixed(2) + '%';
+            document.getElementById('proof-resonance').innerText = reson;
+            document.getElementById('proof-entropy').innerText = entropy;
+            document.getElementById('proof-curvature').innerText = curv;
+            document.getElementById('ui-quantum-flux').innerText = flux + ' meV';
+
+            frameCount++;
+            if (frameCount >= 40) {
+                frameCount = 0;
+                sim.chunk++;
+                document.getElementById('ui-chunk-counter').innerText = sim.chunk;
+                const status = sim.hasTexture ? (sim.deform > 3.0 ? 'تداخل وعي فائق الاضطراب' : 'تداخل وعي مستقر') : 'مادة مظلمة خام';
+                appendLedger(`استقرار العقدة #${sim.chunk}. التوازن البنيوي: ${status}.`, 'tag-commit');
+            }
+        }
+
+        // Ledger Audit Logging
+        const ledgerStore = [];
+        function appendLedger(text, tag = '') {
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+            ledgerStore.push({ chunk: sim.chunk, time, text, tag });
+            if (ledgerStore.length > 100) ledgerStore.shift();
+
+            const box = document.getElementById('ledger-content');
+            const row = document.createElement('div');
+            row.className = `ledger-row ${tag}`;
+            row.innerText = `[${time}] [N-${sim.chunk}] ${text}`;
+            box.appendChild(row);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        // Presets & Patterns
+        function injectPattern(type) {
+            if (type === 'HYPER_FRACTAL') {
+                sim.targetDeform = 4.5; sim.targetFreq = 7.0;
+                appendLedger('حقن نبضة كسيرية حرجة لتوليد أقصى تداخل طيفي.', 'tag-order');
+            } else if (type === 'FLUID_MATRIX') {
+                sim.targetDeform = 1.8; sim.targetFreq = 1.5;
+                appendLedger('تحفيز التدفق البيولوجي المرن لمحاكاة تموجات الوعي الإنساني.', 'tag-order');
+            } else if (type === 'QUANTUM_RESONANCE') {
+                sim.targetDeform = 2.8; sim.targetFreq = 5.2;
+                appendLedger('توليد رنين كمومي عالي التوافق في الأبعاد المتشعبة.', 'tag-order');
+            } else if (type === 'COSMIC_EQUILIBRIUM') {
+                sim.targetDeform = 1.2; sim.targetFreq = 3.14;
+                appendLedger('موازنة التردد مع النسبة الذهبية الكونية (Pi Equilibrium).', 'tag-order');
+            } else {
+                sim.targetDeform = 1.0; sim.targetFreq = 2.0;
+                sim.scaleX = 1.0; sim.scaleY = 1.0; sim.scaleZ = 1.0;
+                mesh.scale.set(1.0, 1.0, 1.0);
+                document.getElementById('rng-scaleX').value = 1.0;
+                document.getElementById('rng-scaleY').value = 1.0;
+                document.getElementById('rng-scaleZ').value = 1.0;
+                appendLedger('إعادة ضبط مصفوفة الأبعاد للقوالب الأساسية المتزنة.', 'tag-commit');
+            }
+            document.getElementById('rng-deform').value = sim.targetDeform;
+            document.getElementById('rng-freq').value = sim.targetFreq;
+            document.getElementById('val-deform').innerText = sim.targetDeform.toFixed(1);
+            document.getElementById('val-freq').innerText = sim.targetFreq.toFixed(1) + ' Hz';
+        }
+
+        // Texture Injections
+        function applyPresetTexture(type) {
+            const tex = generateProceduralTexture(type);
+            shaderMaterial.uniforms.uTexture.value = tex;
+            shaderMaterial.uniforms.uHasTexture.value = true;
+            sim.hasTexture = true;
+            const names = {
+                neural: 'Neural Tapestry', sacred: 'Sacred Matrix', cosmic: 'Cosmic Singularity', cyber: 'Cyber Lattice', chromatic: 'Chromatic Stream'
+            };
+            sim.textureName = names[type];
+            document.getElementById('ui-injected-block').innerText = sim.textureName;
+            
+            document.querySelectorAll('.preset-tex-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-tex-' + type)?.classList.add('active');
+            appendLedger(`دمج نسيج تركيبي: [${sim.textureName}] كخلفية مستقرة للوعي.`, 'tag-proof');
+        }
+
+        function handleUserImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const img = new Image();
+                img.onload = function() {
+                    const tex = new THREE.Texture(img);
+                    tex.needsUpdate = true;
+                    shaderMaterial.uniforms.uTexture.value = tex;
+                    shaderMaterial.uniforms.uHasTexture.value = true;
+                    sim.hasTexture = true;
+                    sim.textureName = file.name;
+                    document.getElementById('ui-injected-block').innerText = file.name;
+                    appendLedger(`[إثبات بنيوي] تم حقن اللوحة المخصصة [${file.name}].`, 'tag-proof');
+                };
+                img.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearInjectedTexture() {
+            sim.hasTexture = false;
+            shaderMaterial.uniforms.uHasTexture.value = false;
+            document.getElementById('ui-injected-block').innerText = 'المادة المظلمة الخام';
+            appendLedger('تم فصل النسيج البصري والعودة لحالة المادة المظلمة.', 'tag-order');
+        }
+
+        // Parameter Updaters
+        function setGeomType(type) {
+            sim.geomType = type;
+            const labels = { sphere: 'Sphere Adaptive', box: 'Experimental Box', torus: 'Topological Torus', torusKnot: 'Fractal Knot', icosahedron: 'Quantum Icosa', cylinder: 'Spacetime Cylinder' };
+            document.getElementById('ui-geom-type').innerText = labels[type];
+            document.querySelectorAll('#sec-geom .btn-grid-2 button').forEach(b => b.classList.remove('active'));
+            const map = { sphere: 'btn-g-sphere', box: 'btn-g-box', torus: 'btn-g-torus', torusKnot: 'btn-g-knot', icosahedron: 'btn-g-icosa', cylinder: 'btn-g-cyl' };
+            document.getElementById(map[type])?.classList.add('active');
+            rebuildGeometry();
+            appendLedger(`تحويل القالب الهندسي إلى: ${labels[type]}.`);
+        }
+
+        function updateScale(axis, val) {
+            const v = parseFloat(val);
+            if (axis === 'x') { sim.scaleX = v; document.getElementById('val-scaleX').innerText = v.toFixed(1); mesh.scale.x = v; }
+            if (axis === 'y') { sim.scaleY = v; document.getElementById('val-scaleY').innerText = v.toFixed(1); mesh.scale.y = v; }
+            if (axis === 'z') { sim.scaleZ = v; document.getElementById('val-scaleZ').innerText = v.toFixed(1); mesh.scale.z = v; }
+        }
+
+        function setRenderMode(mode) {
+            sim.renderMode = mode;
+            document.querySelectorAll('#sec-render .btn-grid-2 button').forEach(b => b.classList.remove('active'));
+            const map = { wireframe: 'btn-m-wire', solid: 'btn-m-solid', points: 'btn-m-points', glow: 'btn-m-glow' };
+            document.getElementById(map[mode])?.classList.add('active');
+            rebuildGeometry();
+        }
+
+        function setColorTheme(theme) {
+            sim.colorTheme = theme;
+            const th = THEMES[theme];
+            shaderMaterial.uniforms.uColorA.value = th.a;
+            shaderMaterial.uniforms.uColorB.value = th.b;
+            shaderMaterial.uniforms.uColorAccent.value = th.accent;
+            document.querySelectorAll('#sec-render .btn-grid-2 button').forEach(b => {
+                if (b.id && b.id.startsWith('th-')) b.classList.remove('active');
+            });
+            const map = { 'neon-cyber': 'th-neon', 'quantum-emerald': 'th-emerald', 'cosmic-void': 'th-void', 'solar-plasma': 'th-plasma' };
+            document.getElementById(map[theme])?.classList.add('active');
+        }
+
+        function updateDeform(val) {
+            sim.targetDeform = parseFloat(val);
+            document.getElementById('val-deform').innerText = sim.targetDeform.toFixed(1);
+        }
+        function updateFreq(val) {
+            sim.targetFreq = parseFloat(val);
+            document.getElementById('val-freq').innerText = sim.targetFreq.toFixed(1) + ' Hz';
+        }
+        function updateSpeed(val) {
+            sim.speed = parseFloat(val);
+            document.getElementById('val-speed').innerText = sim.speed.toFixed(1) + 'x';
+        }
+
+        function toggleAutoRotate() {
+            sim.autoRotate = !sim.autoRotate;
+            const btn = document.getElementById('btn-autorotate');
+            btn.classList.toggle('active', sim.autoRotate);
+            btn.innerText = sim.autoRotate ? 'مفعّل' : 'متوقف';
+        }
+
+        function toggleCosmicDrone() {
+            sim.audioEnabled = !sim.audioEnabled;
+            const btn = document.getElementById('btn-audio-toggle');
+            if (sim.audioEnabled) {
+                audioEngine.init();
+                btn.style.borderColor = 'var(--accent-cyan)';
+                btn.style.color = 'var(--accent-cyan)';
+                appendLedger('تفعيل رنين التردد الكوني (432Hz Synth).', 'tag-order');
+            } else {
+                audioEngine.stop();
+                btn.style.borderColor = '#1f293d';
+                btn.style.color = 'inherit';
+                appendLedger('كتم الرنين الكوني.');
+            }
+        }
+
+        function resetCameraAngle() {
+            camera.position.set(0, 0, 4.3);
+            controls.target.set(0, 0, 0);
+            controls.update();
+            appendLedger('إعادة توجيه محور المراقبة إلى المركز المرجعي (0, 0, 4.3).');
+        }
+
+        function toggleZenMode() {
+            const header = document.getElementById('app-header');
+            const sidebar = document.getElementById('main-sidebar');
+            const tele = document.getElementById('telemetry-3d');
+            const proof = document.getElementById('proof-analytics');
+            const met = document.getElementById('matrix-metrics');
+            const zen = document.getElementById('zen-exit-pill');
+            const isZen = header.style.display === 'none';
+
+            if (isZen) {
+                header.style.display = 'flex';
+                sidebar.style.display = 'flex';
+                tele.style.display = 'block';
+                proof.style.display = 'block';
+                met.style.display = 'block';
+                zen.style.display = 'none';
+            } else {
+                header.style.display = 'none';
+                sidebar.style.display = 'none';
+                tele.style.display = 'none';
+                proof.style.display = 'none';
+                met.style.display = 'none';
+                zen.style.display = 'block';
+            }
+            handleResize();
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('main-sidebar');
+            sidebar.classList.toggle('hidden');
+            setTimeout(handleResize, 350);
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'h' || e.key === 'H') toggleZenMode();
+        });
+
+        // Video & Snapshot Export
+        let mediaRecorder = null;
+        let recordedBlobs = [];
+        let isRecording = false;
+        let recordStartTime = 0;
+        let recordTimerInterval = null;
+
+        function toggleVideoRecording() {
+            const btn = document.getElementById('btn-record-video');
+            const lbl = document.getElementById('txt-record-label');
+            if (!isRecording) {
+                recordedBlobs = [];
+                const stream = canvas.captureStream(30);
+                let mime = 'video/webm; codecs=vp9';
+                if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm';
+                mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
+                mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedBlobs.push(e.data); };
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(recordedBlobs, { type: 'video/webm' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a'); a.href = url;
+                    a.download = `The-Proof-Matrix-v32.0-${Date.now()}.webm`; a.click();
+                    appendLedger('[سجل السند] تم تصدير ملف الإثبات البصري بنجاح.', 'tag-proof');
+                };
+                mediaRecorder.start(100);
+                isRecording = true;
+                recordStartTime = Date.now();
+                btn.classList.add('recording');
+                recordTimerInterval = setInterval(() => {
+                    const s = Math.floor((Date.now() - recordStartTime) / 1000);
+                    lbl.innerText = `جاري التوثيق (${s}s)...`;
+                }, 1000);
+                appendLedger('بدء توثيق وتسجيل مصفوفة الحقيقة الحية عبر دفق الإطارات...');
+            } else {
+                clearInterval(recordTimerInterval);
+                mediaRecorder.stop();
+                isRecording = false;
+                btn.classList.remove('recording');
+                lbl.innerText = 'تصدير إثبات مصفوفة الحقيقة ©';
+            }
+        }
+
+        function takeSnapshot() {
+            renderer.render(scene, camera);
+            const dataUrl = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = `The-Proof-Framework-Snapshot-${Date.now()}.png`;
+            a.click();
+            appendLedger('التقاط لقطة شاشة مرجعية عالية الدقة للبرهان البنيوي.', 'tag-proof');
+        }
+
+        function exportLedger(format) {
+            let blob, fname;
+            if (format === 'json') {
+                blob = new Blob([JSON.stringify(ledgerStore, null, 2)], { type: 'application/json' });
+                fname = `Empirical-Ledger-${Date.now()}.json`;
+            } else {
+                const txt = ledgerStore.map(r => `[${r.time}] [N-${r.chunk}] [${r.tag}] ${r.text}`).join('\n');
+                blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+                fname = `Empirical-Ledger-Report-${Date.now()}.txt`;
+            }
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+            a.download = fname; a.click();
+            appendLedger(`تم تصدير سجل البرهان الكامل بصيغة ${format.toUpperCase()}.`, 'tag-proof');
+        }
+
+        function clearLedger() {
+            ledgerStore.length = 0;
+            document.getElementById('ledger-content').innerHTML = '<div class="ledger-row">[System] تمت تصفية السجل.</div>';
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.sidebar-tabs button').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-btn-' + tab)?.classList.add('active');
+            const sections = ['sec-tex', 'sec-geom', 'sec-render', 'sec-pressure', 'sec-patterns', 'sec-ledger'];
+            sections.forEach(id => {
+                const el = document.getElementById(id);
+                if (tab === 'all') el.style.display = 'flex';
+                else if (tab === 'tex') el.style.display = id === 'sec-tex' ? 'flex' : 'none';
+                else if (tab === 'geom') el.style.display = (id === 'sec-geom' || id === 'sec-render') ? 'flex' : 'none';
+                else if (tab === 'pressure') el.style.display = (id === 'sec-pressure' || id === 'sec-patterns') ? 'flex' : 'none';
+                else if (tab === 'ledger') el.style.display = id === 'sec-ledger' ? 'flex' : 'none';
+            });
+        }
+
+        function toggleLanguage() {
+            sim.lang = sim.lang === 'ar' ? 'en' : 'ar';
+            document.documentElement.lang = sim.lang;
+            document.documentElement.dir = sim.lang === 'ar' ? 'rtl' : 'ltr';
+            document.getElementById('ui-lang-label').innerText = sim.lang === 'ar' ? 'EN' : 'AR';
+            
+            const isAr = sim.lang === 'ar';
+            document.getElementById('txt-title').innerText = isAr ? 'مصفوفة الإثبات الطوبولوجي للأنسجة' : '3D Predictive World Simulator - The Proof Framework';
+            document.getElementById('txt-subtitle').innerText = isAr ? 'تداخل أنسجة الوعي مع مصفوفة المادة المظلمة الهندسية تحت الضغط الطيفي' : 'Consciousness tissue interference with geometric dark matter matrix under spectral pressure';
+            document.getElementById('txt-record-label').innerText = isAr ? 'تصدير إثبات مصفوفة الحقيقة ©' : 'Export Video Proof ©';
+            document.getElementById('txt-snapshot-label').innerText = isAr ? 'لقطة إثبات' : 'Snapshot';
+            document.getElementById('txt-proof-title').innerText = isAr ? 'مؤشرات إثبات تداخل الوعي الهندسي' : 'Geometric Proof Indicators';
+            document.getElementById('txt-sec-tex').innerText = isAr ? 'حقن النسيج البصري (شاهد الوعي المنظم)' : 'Visual Texture Injection';
+            document.getElementById('txt-sec-geom').innerText = isAr ? 'تعديل أبعاد لوحة العرض (Canvas Adaptation)' : 'Canvas Geometry & Scale';
+            document.getElementById('txt-sec-render').innerText = isAr ? 'حالة الشيدر الطوبولوجية (Topology Render)' : 'Topology Shader Render';
+            document.getElementById('txt-sec-pressure').innerText = isAr ? 'معاملات الضغط والتشويه الكسيري (Pressure Settings)' : 'Spectral Pressure Settings';
+            document.getElementById('txt-sec-patterns').innerText = isAr ? 'أوامر المعايرة والحقن الفوري (Instant Patterns)' : 'Instant Calibration Patterns';
+            document.getElementById('txt-sec-ledger').innerText = isAr ? 'سجل البرهان والأشكال (Empirical Ledger)' : 'Empirical Proof Ledger';
+            document.getElementById('btn-eject-tex').innerText = isAr ? 'إلغاء الحقن' : 'Eject';
+            document.getElementById('txt-upload-label').innerText = isAr ? '📂 انقر لرفع لوحة فنية أو صورة مجهرية' : '📂 Click to upload artwork or microscopy image';
+            document.getElementById('txt-presets-label').innerText = isAr ? 'أو اختر نسيج وعي تركيبي جاهز:' : 'Or choose synthetic preset texture:';
+        }
+
+        // Run on load
+        window.onload = () => {
+            initScene();
+            animate();
+        };
+    </script>
+</body>
+</html>
